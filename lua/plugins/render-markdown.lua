@@ -18,7 +18,14 @@ return {
 
 	keys = {
 		{ "<leader>mr", "<cmd>RenderMarkdown toggle<cr>", ft = "markdown", desc = "Toggle Markdown Render" },
-		{ "<leader>mp", "<cmd>MarkdownPreviewToggle<cr>", ft = "markdown", desc = "Toggle Markdown Preview (browser)" },
+		{
+			"<leader>mp",
+			function()
+				require("utils.mdpreview").toggle()
+			end,
+			ft = "markdown",
+			desc = "Toggle Markdown Preview (browser window tiled next to nvim)",
+		},
 	},
 
 	opts = {

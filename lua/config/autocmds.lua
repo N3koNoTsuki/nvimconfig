@@ -31,18 +31,29 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- format on save using efm langserver and configured formatters
+-- not for C/C++ : clang-format's default style rewrites the code (short functions on one line...),
+-- format those by hand with <leader>cf
+local no_format_on_save = { c = true, cpp = true }
 local lsp_fmt_group = vim.api.nvim_create_augroup("FormatOnSaveGroup", {})
 vim.api.nvim_create_autocmd("BufWritePre", {
 	group = lsp_fmt_group,
-	callback = function()
+	callback = function(args)
 		require("mini.trailspace").trim()
-		local efm = vim.lsp.get_clients({ name = "efm" })
+		if no_format_on_save[vim.bo[args.buf].filetype] then
+			return
+		end
+		local efm = vim.lsp.get_clients({ name = "efm", bufnr = args.buf })
 		if vim.tbl_isempty(efm) then
 			return
 		end
-		vim.lsp.buf.format({ name = "efm", async = true })
+		-- synchronous : an async format lands after the write, on a buffer that may have changed since
+		vim.lsp.buf.format({ name = "efm", bufnr = args.buf, timeout_ms = 2000 })
 	end,
 })
+
+vim.keymap.set({ "n", "x" }, "<leader>cf", function()
+	vim.lsp.buf.format({ name = "efm", timeout_ms = 2000 })
+end, { desc = "Format file / selection (efm)" })
 
 -- on attach function shortcuts
 local lsp_on_attach_group = vim.api.nvim_create_augroup("LspMappings", {})
@@ -76,3 +87,6 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 		vim.api.nvim_set_hl(0, "lCursor", { fg = "#1a1b26", bg = "#87ceeb" })
 	end,
 })
+
+-- clangd project file for C folders (lua/utils/compiledb.lua)
+require("utils.compiledb").setup()

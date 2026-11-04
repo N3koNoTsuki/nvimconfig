@@ -1,6 +1,6 @@
 -- ================================================================================================
 -- TITLE : cheatsheet
--- ABOUT : fzf-lua picker listing every keymap that is actually defined (config, plugins, Neovim
+-- ABOUT : telescope picker listing every keymap that is actually defined (config, plugins, Neovim
 --         defaults), grouped by category, with a usage example in the preview for the curated ones (★).
 --         <CR> runs a normal-mode keymap, or puts an Ex command in the cmdline.
 -- ================================================================================================
@@ -32,13 +32,18 @@ Ouvre / ferme l'arbre de fichiers sur le côté (ferme le mode zen si actif).
 Dans l'arbre :
   <CR>  ouvrir      a  créer      d  supprimer      r  renommer
   g?    aide]] },
-	{ "n", "<leader>ff", "Chercher un fichier (fzf)", [[
+	{ "n", "<leader>ff", "Chercher un fichier (telescope)", [[
 Recherche floue sur les noms de fichiers du dossier courant.
 
 Exemple : ouvrir function.c
   <leader>ff  func  <CR>
 
-Dans fzf : <C-j>/<C-k> pour naviguer, <C-v> ouvrir en vsplit]] },
+Dans telescope :
+  <C-j>/<C-k>   naviguer            <CR>   ouvrir
+  <C-v> / <C-x> ouvrir en vsplit / split
+  <C-q>         envoyer les résultats en quickfix
+  <Esc>         mode normal (j/k, ? = aide)   <Esc> encore : fermer
+Recherche façon fzf : 'exact  ^debut  fin$  !exclure]] },
 	{ "n", "<leader>fg", "Grep en direct dans le projet", [[
 Cherche du texte dans tous les fichiers, résultats en direct.
 
@@ -52,9 +57,40 @@ Exemple : <leader>fb  head  <CR>  -> header.h]] },
 Recherche floue dans :help.
 
 Exemple : <leader>fh  text-objects  <CR>]] },
-	{ "n", "<leader>fk", "Tous les raccourcis (liste brute fzf)", [[
-Liste brute de tous les raccourcis avec leur description,
-sans exemples (version fzf-lua).]] },
+	{ "n", "<leader>fo", "Fichiers récents (telescope)", [[
+Les derniers fichiers ouverts, même dans d'autres dossiers / TD.]] },
+	{ "n", "<leader>f/", "Chercher dans le fichier (telescope)", [[
+Recherche floue dans les lignes du fichier courant, avec aperçu.
+Exemple : <leader>f/  malloc  <CR>]] },
+	{ "n", "<leader>fR", "Rouvrir la dernière recherche", [[
+Rouvre le dernier picker telescope avec la même saisie et la même position.
+
+Exemple : <leader>fg  malloc  <CR> sur un résultat, on corrige,
+  <leader>fR  -> retour dans la liste des malloc, sur le suivant]] },
+	{ "n", "S", "Sauter n'importe où (flash)", [[
+Tape 1-2 lettres de l'endroit visé : des étiquettes apparaissent,
+tape l'étiquette pour y sauter. Marche aussi en visuel et après un opérateur.
+(S et pas s : s sert à mini.surround, sa / sd / sr)
+
+Exemples :
+  S  fo  <étiquette>     -> saute sur un "fo..." visible à l'écran
+  d S  ma  <étiquette>   -> supprime jusqu'à ce "ma..."
+  v S ...                -> étend la sélection jusque-là
+
+f / t / F / T sont aussi améliorés : f puis f encore -> occurrence suivante.]] },
+	{ "n", "gs", "Sélectionner un bloc de code (flash treesitter)", [[
+Étiquette tous les blocs autour du curseur (argument, appel, if, fonction...).
+Tape l'étiquette pour sélectionner ce bloc, ou l'utiliser après un opérateur.
+
+Exemples :
+  gs  <étiquette>    -> sélectionne le corps du for
+  y gs <étiquette>   -> copie toute la fonction]] },
+	{ "o", "r", "Action à distance (flash, après un opérateur)", [[
+Fait une action ailleurs à l'écran sans y déplacer le curseur.
+
+Exemple : copier un mot plus haut sans bouger
+  y r  ma  <étiquette>  iw    -> copie le mot, le curseur revient
+Dans la ligne de commande / : <C-s> active / désactive les étiquettes flash.]] },
 	{ "n", "<leader>bd", "Fermer le buffer", [[
 Comme :bd. Si c'était le dernier buffer, on retombe sur oil.]] },
 	{ "n", "<leader>bn", "Buffer suivant", [[
@@ -169,7 +205,7 @@ Natif équivalent : grr]] },
 	{ "n", "<leader>fd", "LSP finder (définitions + références)", [[
 Tout ce que clangd sait sur le symbole : définition, déclaration,
 références, dans une seule liste.]] },
-	{ "n", "<leader>fi", "Implémentations (fzf)", [[
+	{ "n", "<leader>fi", "Implémentations (telescope)", [[
 Liste les implémentations du symbole. En C, préférer gI (définition) :
 "implementation" au sens LSP sert surtout aux méthodes virtuelles C++.]] },
 	{ "n", "<leader>ft", "Définition du type", [[
@@ -194,12 +230,35 @@ du symbole sous le curseur.]] },
 	{ "n", "<leader>rn", "Renommer partout", [[
 Renomme le symbole sous le curseur dans tout le projet.
 
-Exemple : sur nbLigne  ->  <leader>rn  nbLignes  <CR>     (natif : grn)]] },
+Exemple : sur nbLigne  ->  <leader>rn  nbLignes  <CR>     (natif : grn)
+
+En C, renomme aussi dans les autres .c et dans le .h : clangd a besoin
+d'un compile_commands.json, créé tout seul hors du projet (dans le cache
+de nvim) à partir de make -nB (rien n'est compilé).
+Refait à chaque session. Nouveau .c en cours de session : :CompileDb.]] },
+	{ ":", ":CompileDb", "Refaire le projet clangd (compile_commands.json)", [[
+Régénère compile_commands.json depuis le Makefile (ou les *.c du dossier)
+et redémarre clangd. Le fichier est rangé dans ~/.cache/nvim/compiledb/,
+rien n'est ajouté à ton projet.
+Si le projet a déjà le sien (cmake, bear...), il est utilisé tel quel.
+
+À faire quand :
+  - tu ajoutes un nouveau .c au TD
+  - tu changes les options de compilation dans le Makefile
+  - <leader>rn / <leader>fr oublient un fichier]] },
 	{ "n", "<leader>ca", "Actions de code", [[
 Corrections proposées par clangd (include manquant, etc.).   (natif : gra)
 
 Exemple : sur printf sans #include <stdio.h>
   <leader>ca  -> "Include <stdio.h>"]] },
+	{ "n", "<leader>cf", "Formater le fichier (à la main)", [[
+Formate le fichier (ou la sélection en visuel) avec le formateur du langage
+(clang-format pour le C). Pas automatique au :w en C/C++, seulement ici.
+Les autres langages (lua, python, sh...) sont formatés au :w.
+
+Attention, sans fichier .clang-format le style par défaut met les fonctions
+courtes sur une ligne :  void hello() { printf("hello\n"); }
+u pour annuler si le résultat ne plaît pas.]] },
 	{ "n", "<leader>oi", "Organiser les includes", [[
 Trie / nettoie les imports si le serveur LSP le supporte, puis formate.]] },
 
@@ -208,6 +267,12 @@ Trie / nettoie les imports si le serveur LSP le supporte, puis formate.]] },
 Affiche le warning / l'erreur clangd sous le curseur.]] },
 	{ "n", "<leader>D", "Diagnostics de la ligne", [[
 Affiche tous les warnings / erreurs de la ligne courante.]] },
+	{ "n", "<leader>dl", "Diagnostics : lignes virtuelles / fin de ligne", [[
+Par défaut le message complet de clangd s'affiche sous la ligne
+(lignes virtuelles, comme lsp_lines). <leader>dl bascule vers le
+mode court (message en fin de ligne) et inversement.
+
+Utile quand un fichier plein d'erreurs devient illisible.]] },
 	{ "n", "<leader>nd", "Diagnostic suivant", [[
 Saute au warning / erreur suivant(e). Natif : ]d]] },
 	{ "n", "<leader>pd", "Diagnostic précédent", [[
@@ -217,10 +282,10 @@ Liste de tous les warnings / erreurs du projet dans un panneau.
 <CR> sur une ligne pour y aller, q pour fermer.]] },
 	{ "n", "<leader>xX", "Diagnostics du fichier (Trouble)", [[
 Comme <leader>xx mais seulement pour le fichier courant.]] },
-	{ "n", "<leader>fx", "Diagnostics du fichier (fzf)", [[
-Diagnostics du fichier dans fzf, avec aperçu.]] },
-	{ "n", "<leader>fX", "Diagnostics du projet (fzf)", [[
-Diagnostics de tout le projet dans fzf, avec aperçu.]] },
+	{ "n", "<leader>fx", "Diagnostics du fichier (telescope)", [[
+Diagnostics du fichier dans telescope, avec aperçu.]] },
+	{ "n", "<leader>fX", "Diagnostics du projet (telescope)", [[
+Diagnostics de tout le projet dans telescope, avec aperçu.]] },
 	{ "n", "<leader>xQ", "Quickfix (Trouble)", [[
 Affiche la liste quickfix dans Trouble.
 
@@ -249,6 +314,18 @@ En visuel (V) : sélectionner puis  :s/ancien/nouveau/g
 Astuce : :%s/\<i\>/k/g  -> seulement le mot entier "i"]] },
 
 	"Édition", -- category
+	{ "n", "<leader>cj", "Découper / joindre un bloc (treesj)", [[
+Passe un bloc d'une ligne à plusieurs, et l'inverse (curseur dedans).
+<leader>cJ : pareil, en découpant aussi les blocs imbriqués.
+
+Exemples :
+  int tab[] = { 1, 2, 3 };       <leader>cj  ->  int tab[] = {
+                                                   1,
+                                                   2,
+                                                   3,
+                                                 };
+  printf("%d %d\n", a, b);       <leader>cj  ->  un argument par ligne
+  <leader>cj encore               -> tout revient sur une ligne]] },
 	{ "n", "ciw", "Remplacer le mot", [[
 Supprime le mot sous le curseur et passe en insertion.
 
@@ -402,12 +479,8 @@ Dans le diff :
 
 Exemple : dans TD5/main.c
   <leader>hv   ]c ]c   <leader>hj  -> retour sur main.c à la ligne du changement]] },
-	{ "n", "<leader>ht", "Diff du TD courant (diffview)", [[
-Mono-repo : un seul dépôt git (INSA/3A/TD) avec un dossier par TD/TP.
-<leader>ht ne montre QUE les fichiers modifiés du dossier du fichier courant
-(TD5/, TP/...). À la racine (README.md) -> tout le dépôt.
-<leader>hD : toujours tout le dépôt.
-
+	{ "n", "<leader>hD", "Diff de tout le dépôt (diffview)", [[
+Tous les fichiers modifiés du dépôt (TD1..TD5, TP, README).
 Fonctionne même si nvim a été lancé ailleurs (ex. depuis ~) :
 le dépôt est trouvé à partir du fichier courant (ou du dossier oil).
 
@@ -420,17 +493,12 @@ le dépôt est trouvé à partir du fichier courant (ou du dossier oil).
   <leader>hq       fermer
   g?               aide diffview
 
-Exemple : dans TD5/main.c
-  <leader>ht  -> TD5/main.c, TD5/function.c   (TD4/ n'apparaît pas)
-  <Tab>  ]c   <leader>hj  -> function.c, sur la ligne modifiée]] },
-	{ "n", "<leader>hD", "Diff de tout le dépôt (diffview)", [[
-Comme <leader>ht mais tous les dossiers (TD1..TD5, TP, README).
-Utile avant un commit qui touche plusieurs TD.]] },
+Exemple : <leader>hD  <Tab>  ]c  <leader>hj  -> function.c, sur la ligne modifiée]] },
 	{ "n", "<leader>hj", "Quitter le diff -> fichier réel", [[
 Depuis un diff (diffview OU <leader>hv), ferme le diff et laisse
 le vrai fichier ouvert, curseur sur la ligne qu'on regardait.
 
-Exemple : <leader>ht  <Tab>  ]c  <leader>hj  -> on corrige directement]] },
+Exemple : <leader>hD  <Tab>  ]c  <leader>hj  -> on corrige directement]] },
 	{ "n", "<leader>hq", "Fermer le diff", [[
 Ferme diffview ou le split fugitive, retour là où on était.]] },
 	{ "n", "<leader>hf", "Historique du fichier", [[
@@ -468,13 +536,31 @@ Exemples :
   :Git log --oneline -- TD5
   :Git add TD5]] },
 
+	"Markdown", -- category
+	{ "n", "<leader>mp", "Aperçu dans le navigateur (temps réel)", [[
+Dans un fichier .md : ouvre le rendu dans une fenêtre du navigateur,
+mise à jour en direct pendant que tu tapes, et la page suit le curseur.
+
+Sous niri : l'écran est partagé en deux automatiquement,
+  nvim à gauche (50 %)  |  aperçu à droite (50 %)
+même si le terminal était en plein écran ou maximisé. Le focus reste dans nvim.
+<leader>mp encore : ferme la fenêtre de l'aperçu et remet le terminal
+comme avant (plein écran, maximisé ou sa largeur d'origine).
+Quitter nvim avec l'aperçu ouvert fait la même chose.
+
+Exemple : README.md en plein écran  ->  <leader>mp  -> moitié / moitié
+          <leader>mp                 -> retour en plein écran]] },
+	{ "n", "<leader>mr", "Rendu dans nvim (on / off)", [[
+Active / désactive le rendu markdown directement dans le buffer
+(titres, listes, tableaux, code). Le texte brut revient sur la ligne du curseur.]] },
+
 	"Aide", -- category
 	{ "n", "<leader>/", "Cette cheatsheet", [[
 Liste de tous les raccourcis. ★ = avec un exemple rédigé.
 Ajouter / modifier un exemple : lua/utils/cheatsheet.lua]] },
 }
 
-local mode_names = { n = "normal", x = "visuel", i = "insertion", t = "terminal", [":"] = "commande" }
+local mode_names = { n = "normal", x = "visuel", o = "opérateur", i = "insertion", t = "terminal", [":"] = "commande" }
 local live_modes = { "n", "x", "i", "t" }
 
 -- category of the keymaps that have no curated entry, by the plugin that defines them
@@ -485,7 +571,11 @@ local plugin_category = {
 	["mini.move"] = "Édition",
 	["mini.surround"] = "Édition",
 	["oil.nvim"] = "Fichiers / navigation",
-	["fzf-lua"] = "Fichiers / navigation",
+	["telescope.nvim"] = "Fichiers / navigation",
+	["flash.nvim"] = "Fichiers / navigation",
+	["treesj"] = "Édition",
+	["render-markdown.nvim"] = "Markdown",
+	["markdown-preview.nvim"] = "Markdown",
 	["nvim-tree.lua"] = "Fichiers / navigation",
 	["compile-mode.nvim"] = "Compilation / exécution",
 	["lspsaga.nvim"] = "LSP : lire le code",
@@ -643,41 +733,69 @@ end
 
 local open_categories -- forward declaration (the items picker goes back to it)
 
-local function open_items(category, categories)
-	local by_line, lines = {}, {}
-	for _, item in ipairs(category.items) do
-		local line = item_line(item)
-		by_line[line] = item
-		table.insert(lines, line)
-	end
+-- telescope picker over `rows` ({ line, value }) with a text preview
+local function picker(title, rows, preview_text, on_select, extra_mappings)
+	local pickers = require("telescope.pickers")
+	local finders = require("telescope.finders")
+	local previewers = require("telescope.previewers")
+	local conf = require("telescope.config").values
+	local actions = require("telescope.actions")
+	local state = require("telescope.actions.state")
 
-	require("fzf-lua").fzf_exec(lines, {
-		prompt = category.name .. "> ",
-		preview = function(selected)
-			local item = by_line[selected[1]]
-			return item and item_preview(item) or ""
-		end,
-		fzf_opts = {
-			["--preview-window"] = "right,55%,wrap",
-			["--header"] = "ctrl-b : retour aux catégories   ★ = exemple rédigé",
-		},
-		actions = {
-			["default"] = function(selected)
-				local item = by_line[selected[1]]
-				if item then
-					run(item)
+	pickers
+		.new({}, {
+			prompt_title = title,
+			finder = finders.new_table({
+				results = rows,
+				entry_maker = function(row)
+					return { value = row.value, display = row.line, ordinal = row.line }
+				end,
+			}),
+			sorter = conf.generic_sorter({}),
+			previewer = previewers.new_buffer_previewer({
+				define_preview = function(self, entry)
+					local text = preview_text(entry.value)
+					vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(text, "\n"))
+					vim.wo[self.state.winid].wrap = true
+				end,
+			}),
+			attach_mappings = function(bufnr, map)
+				actions.select_default:replace(function()
+					local entry = state.get_selected_entry()
+					actions.close(bufnr)
+					if entry then
+						vim.schedule(function() -- once telescope has given the focus back
+							on_select(entry.value)
+						end)
+					end
+				end)
+				for lhs, fn in pairs(extra_mappings or {}) do
+					map({ "i", "n" }, lhs, function()
+						actions.close(bufnr)
+						vim.schedule(fn)
+					end)
 				end
+				return true
 			end,
-			["ctrl-b"] = function()
-				open_categories(categories)
-			end,
-		},
+		})
+		:find()
+end
+
+local function open_items(category, categories)
+	local rows = {}
+	for _, item in ipairs(category.items) do
+		table.insert(rows, { line = item_line(item), value = item })
+	end
+	picker(category.name .. "   (<C-b> : retour aux catégories   ★ = exemple rédigé)", rows, item_preview, run, {
+		["<C-b>"] = function()
+			open_categories(categories)
+		end,
 	})
 end
 
 open_categories = function(categories)
 	categories = categories or collect()
-	local by_line, lines = {}, {}
+	local rows = {}
 	for _, cat in ipairs(categories) do
 		local stars = 0
 		for _, item in ipairs(cat.items) do
@@ -685,36 +803,17 @@ open_categories = function(categories)
 		end
 		local pad = string.rep(" ", 28 - vim.fn.strdisplaywidth(cat.name)) -- %-28s counts bytes, not chars (é)
 		local line = string.format("%s%s %3d raccourcis  %s", cat.name, pad, #cat.items, stars > 0 and ("★ " .. stars) or "")
-		by_line[line] = cat
-		table.insert(lines, line)
+		table.insert(rows, { line = line, value = cat })
 	end
-
-	require("fzf-lua").fzf_exec(lines, {
-		prompt = "Cheatsheet> ",
-		preview = function(selected)
-			local cat = by_line[selected[1]]
-			if not cat then
-				return ""
-			end
-			local out = {}
-			for _, item in ipairs(cat.items) do
-				table.insert(out, item_line(item))
-			end
-			return table.concat(out, "\n")
-		end,
-		fzf_opts = {
-			["--preview-window"] = "right,60%",
-			["--header"] = "<CR> : ouvrir la catégorie",
-		},
-		actions = {
-			["default"] = function(selected)
-				local cat = by_line[selected[1]]
-				if cat then
-					open_items(cat, categories)
-				end
-			end,
-		},
-	})
+	picker("Cheatsheet   (<CR> : ouvrir la catégorie)", rows, function(cat)
+		local out = {}
+		for _, item in ipairs(cat.items) do
+			table.insert(out, item_line(item))
+		end
+		return table.concat(out, "\n")
+	end, function(cat)
+		open_items(cat, categories)
+	end)
 end
 
 M.open = function()

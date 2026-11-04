@@ -47,18 +47,13 @@ local function relative_file(root)
 	return file:sub(#root + 2)
 end
 
--- :DiffviewOpen on the whole repo (scoped = false) or on the current TD only
-function M.diff(scoped)
+-- :DiffviewOpen on the whole repo of the current file
+function M.diff()
 	local root = M.root()
 	if not root then
 		return
 	end
-	local cmd = "DiffviewOpen -C" .. vim.fn.fnameescape(root)
-	local scope = scoped and M.scope(root)
-	if scope then
-		cmd = cmd .. " -- " .. vim.fn.fnameescape(scope)
-	end
-	vim.cmd(cmd)
+	vim.cmd("DiffviewOpen -C" .. vim.fn.fnameescape(root))
 end
 
 -- :DiffviewFileHistory of the current file (what = "file") or of the current TD (what = "scope")

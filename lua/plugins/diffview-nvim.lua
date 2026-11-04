@@ -1,8 +1,8 @@
 -- ================================================================================================
 -- TITLE : diffview.nvim
 -- ABOUT : side-by-side git diff (old version left, working file right) with a panel listing the
---         changed files, and the commit history of a file or folder. Keymaps under <leader>h,
---         scoped to the current TD folder of the mono-repo (see lua/utils/git.lua).
+--         changed files, and the commit history of a file or of the current TD folder of the
+--         mono-repo. Keymaps under <leader>h (see lua/utils/git.lua).
 -- LINKS :
 --   > github : https://github.com/sindrets/diffview.nvim
 -- ================================================================================================
@@ -16,16 +16,9 @@ return {
 	cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory", "DiffviewToggleFiles" },
 	keys = {
 		{
-			"<leader>ht",
-			function()
-				git().diff(true)
-			end,
-			desc = "Diff of the current TD (diffview)",
-		},
-		{
 			"<leader>hD",
 			function()
-				git().diff(false)
+				git().diff()
 			end,
 			desc = "Diff of the whole repo (diffview)",
 		},

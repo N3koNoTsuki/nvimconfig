@@ -51,13 +51,18 @@ M.on_attach = function(event)
 	keymap("n", "<leader>nd", "<cmd>Lspsaga diagnostic_jump_next<CR>", vim.tbl_extend("force", opts, { desc = "Next diagnostic" })) -- next diagnostic
 	keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", vim.tbl_extend("force", opts, { desc = "Hover documentation" })) -- hover documentation
 
-	-- fzf-lua keymaps
-	keymap("n", "<leader>fd", "<cmd>FzfLua lsp_finder<CR>", vim.tbl_extend("force", opts, { desc = "LSP finder (defs + refs)" })) -- LSP Finder (definition + references)
-	keymap("n", "<leader>fr", "<cmd>FzfLua lsp_references<CR>", vim.tbl_extend("force", opts, { desc = "LSP references" })) -- Show all references to the symbol under the cursor
-	keymap("n", "<leader>ft", "<cmd>FzfLua lsp_typedefs<CR>", vim.tbl_extend("force", opts, { desc = "LSP type definitions" })) -- Jump to the type definition of the symbol under the cursor
-	keymap("n", "<leader>fs", "<cmd>FzfLua lsp_document_symbols<CR>", vim.tbl_extend("force", opts, { desc = "LSP document symbols" })) -- List all symbols (functions, classes, etc.) in the current file
-	keymap("n", "<leader>fw", "<cmd>FzfLua lsp_workspace_symbols<CR>", vim.tbl_extend("force", opts, { desc = "LSP workspace symbols" })) -- Search for any symbol across the entire project/workspace
-	keymap("n", "<leader>fi", "<cmd>FzfLua lsp_implementations<CR>", vim.tbl_extend("force", opts, { desc = "LSP implementations" })) -- Go to implementation
+	-- telescope keymaps
+	local tb = function(name)
+		return function()
+			require("telescope.builtin")[name]()
+		end
+	end
+	keymap("n", "<leader>fd", "<cmd>Lspsaga finder<CR>", vim.tbl_extend("force", opts, { desc = "LSP finder (defs + refs)" })) -- LSP Finder (definition + references)
+	keymap("n", "<leader>fr", tb("lsp_references"), vim.tbl_extend("force", opts, { desc = "LSP references" })) -- Show all references to the symbol under the cursor
+	keymap("n", "<leader>ft", tb("lsp_type_definitions"), vim.tbl_extend("force", opts, { desc = "LSP type definitions" })) -- Jump to the type definition of the symbol under the cursor
+	keymap("n", "<leader>fs", tb("lsp_document_symbols"), vim.tbl_extend("force", opts, { desc = "LSP document symbols" })) -- List all symbols (functions, classes, etc.) in the current file
+	keymap("n", "<leader>fw", tb("lsp_dynamic_workspace_symbols"), vim.tbl_extend("force", opts, { desc = "LSP workspace symbols" })) -- Search for any symbol across the entire project/workspace
+	keymap("n", "<leader>fi", tb("lsp_implementations"), vim.tbl_extend("force", opts, { desc = "LSP implementations" })) -- Go to implementation
 
 	-- Order Imports (if supported by the client LSP)
 	if client:supports_method("textDocument/codeAction", bufnr) then

@@ -13,7 +13,7 @@ return {
 			{ "<leader>b", group = "Buffers" },
 			{ "<leader>c", group = "Code" },
 			{ "<leader>d", group = "Debug / Diagnostics" },
-			{ "<leader>f", group = "Find (fzf)" },
+			{ "<leader>f", group = "Find (telescope)" },
 			{ "<leader>g", group = "Goto" },
 			{ "<leader>gs", group = "Goto in vsplit" },
 			{ "<leader>n", group = "Next" },
@@ -21,6 +21,7 @@ return {
 			{ "<leader>r", group = "Rename / Config" },
 			{ "<leader>s", group = "Splits" },
 			{ "<leader>h", group = "Git" },
+			{ "<leader>m", group = "Markdown" },
 		},
 	},
 	keys = {
@@ -30,13 +31,6 @@ return {
 				require("utils.cheatsheet").open()
 			end,
 			desc = "Cheatsheet (keymaps with examples)",
-		},
-		{
-			"<leader>fk",
-			function()
-				require("fzf-lua").keymaps({ show_desc = true, show_details = false })
-			end,
-			desc = "Search all keymaps (with descriptions)",
 		},
 	},
 }
