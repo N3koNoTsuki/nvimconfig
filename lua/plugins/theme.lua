@@ -26,7 +26,10 @@ return {
 		lazy = false,
 		priority = 1000,
 		config = function()
-			vim.cmd.colorscheme("dms")
+			-- colors/dms.lua can be rewritten by the shell : never leave nvim without a theme
+			if not pcall(vim.cmd.colorscheme, "dms") or vim.g.colors_name ~= "dms" then
+				vim.cmd.colorscheme("habamax")
+			end
 		end,
 	},
 }

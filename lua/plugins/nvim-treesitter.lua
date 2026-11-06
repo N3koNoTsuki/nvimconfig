@@ -41,6 +41,7 @@ return {
 			"vimdoc",
 			"yaml",
 		}
+		vim.g.treesitter_parsers = ensure_installed -- install.sh waits for them
 
 		local config = require("nvim-treesitter.config")
 		local already_installed = config.get_installed()

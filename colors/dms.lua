@@ -12,18 +12,18 @@ local config_home = vim.env.XDG_CONFIG_HOME
 if config_home == nil or #config_home == 0 then
 	config_home = vim.fs.joinpath(vim.env.HOME, ".config")
 end
+-- DankMaterialShell : the directory of the shell before its rename to Dux Shell
 local settings_file_path = vim.fs.joinpath(config_home, "Dux Shell", "settings.json")
-local settings_file = io.open(settings_file_path, "r")
-if settings_file == nil then
-	vim.notify(
-		"cannnot read dms settings file at '" .. settings_file_path .. "'",
-		vim.log.levels.ERROR,
-		{ title = "dms integration" }
-	)
-	return
+if not vim.uv.fs_stat(settings_file_path) then
+	settings_file_path = vim.fs.joinpath(config_home, "DankMaterialShell", "settings.json")
 end
-local settings = vim.json.decode(settings_file:read("*a"))
-settings_file:close()
+-- no shell on this machine : same theme, with the default settings
+local settings = {}
+local settings_file = io.open(settings_file_path, "r")
+if settings_file ~= nil then
+	settings = vim.json.decode(settings_file:read("*a"))
+	settings_file:close()
+end
 
 local function deepGet(t, k)
 	for _, s in ipairs(k) do
@@ -35,7 +35,10 @@ local function deepGet(t, k)
 	return t
 end
 
-local mode = vim.system({ "dms", "ipc", "call", "theme", "getMode" }, { text = true }):wait().stdout
+local mode = nil
+if vim.fn.executable("dms") == 1 then
+	mode = vim.system({ "dms", "ipc", "call", "theme", "getMode" }, { text = true }):wait().stdout
+end
 if mode ~= nil then
 	if mode:match("light") then
 		vim.o.background = "light"

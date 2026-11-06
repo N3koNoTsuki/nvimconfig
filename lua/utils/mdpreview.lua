@@ -103,7 +103,7 @@ local function close()
 end
 
 function M.toggle()
-	if not vim.env.NIRI_SOCKET or vim.fn.executable("niri") == 0 then
+	if not vim.env.NIRI_SOCKET or vim.fn.executable("niri") == 0 or vim.fn.executable(BROWSER) == 0 then
 		vim.cmd("MarkdownPreviewToggle")
 	elseif state then
 		close()

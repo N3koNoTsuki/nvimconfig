@@ -50,4 +50,7 @@ require("lazy").setup({
 		},
 	},
 	checker = { enabled = true },
+	-- only image.nvim asks for rocks (magick), and it is set up with the magick_cli processor :
+	-- no luarocks / lua5.1 to install on each machine
+	rocks = { enabled = false },
 })

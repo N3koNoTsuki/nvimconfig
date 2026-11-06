@@ -11,7 +11,7 @@ return {
 		require("lualine").setup({
 			options = {
 				-- theme = "melange",
-				theme = "dms",
+				theme = vim.g.colors_name == "dms" and "dms" or "auto",
 				icons_enabled = true,
 				section_separators = { left = "", right = "" },
 				component_separators = "|",

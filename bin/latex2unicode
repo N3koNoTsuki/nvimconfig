@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """LaTeX formula (stdin) -> one line of unicode (stdout), for render-markdown.nvim.
 
 latex2text drops the braces: \\frac{1-x}{y} gives 1-x/y and x^{n+1} gives x^n+1, which are different
