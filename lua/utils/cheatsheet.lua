@@ -554,6 +554,27 @@ Exemple : README.md en plein écran  ->  <leader>mp  -> moitié / moitié
 Active / désactive le rendu markdown directement dans le buffer
 (titres, listes, tableaux, code). Le texte brut revient sur la ligne du curseur.]] },
 
+	"Notebooks Jupyter", -- category
+	{ "n", "<leader>jj", "Exécuter la cellule", [[
+Un .ipynb s'ouvre comme du markdown rendu, les cellules de code sont des blocs ```python.
+Le kernel du .venv du projet démarre à l'ouverture, les sorties s'affichent sous les cellules.
+:w réécrit le .ipynb avec les sorties.
+
+Exemple : nvim TP1.ipynb
+  ]j             -> cellule de code suivante   ([j : précédente)
+  <leader>jj     -> exécute, résultat / graphe affiché sous la cellule
+  <leader>jo     -> ouvre la sortie dans une fenêtre pour la faire défiler (q : sort)]] },
+	{ "n", "<leader>jn", "Exécuter la cellule et passer à la suivante", [[
+Comme Maj+Entrée dans Jupyter.]] },
+	{ "n", "<leader>ja", "Exécuter tout le notebook", [[
+Lance toutes les cellules de code, dans l'ordre.]] },
+	{ "n", "<leader>ji", "Démarrer le kernel", [[
+Cherche .venv en remontant depuis le notebook et l'enregistre comme kernel.
+Il doit contenir ipykernel : uv pip install ipykernel
+Sans .venv : kernel python3 de base, sans numpy ni matplotlib.]] },
+	{ "n", "<leader>jr", "Redémarrer le kernel", [[
+Oublie les variables et les sorties. <leader>jx interrompt juste le calcul en cours.]] },
+
 	"Aide", -- category
 	{ "n", "<leader>/", "Cette cheatsheet", [[
 Liste de tous les raccourcis. ★ = avec un exemple rédigé.
@@ -575,6 +596,7 @@ local plugin_category = {
 	["flash.nvim"] = "Fichiers / navigation",
 	["treesj"] = "Édition",
 	["render-markdown.nvim"] = "Markdown",
+	["molten-nvim"] = "Notebooks Jupyter",
 	["markdown-preview.nvim"] = "Markdown",
 	["nvim-tree.lua"] = "Fichiers / navigation",
 	["compile-mode.nvim"] = "Compilation / exécution",

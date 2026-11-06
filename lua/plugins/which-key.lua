@@ -22,6 +22,7 @@ return {
 			{ "<leader>s", group = "Splits" },
 			{ "<leader>h", group = "Git" },
 			{ "<leader>m", group = "Markdown" },
+			{ "<leader>j", group = "Jupyter" },
 		},
 	},
 	keys = {

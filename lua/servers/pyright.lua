@@ -9,6 +9,14 @@
 return function(capabilities)
 	vim.lsp.config('pyright', {
 		capabilities = capabilities,
+		-- resolve the imports with the project's .venv, even when it isn't activated
+		before_init = function(_, config)
+			local venv = vim.env.VIRTUAL_ENV
+				or vim.fs.find(".venv", { path = config.root_dir or vim.fn.getcwd(), upward = true, type = "directory" })[1]
+			if venv then
+				config.settings.python = { pythonPath = venv .. "/bin/python" }
+			end
+		end,
 		settings = {
 			pyright = {
 				disableOrganizeImports = false,

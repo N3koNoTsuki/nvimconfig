@@ -38,6 +38,10 @@ local lsp_fmt_group = vim.api.nvim_create_augroup("FormatOnSaveGroup", {})
 vim.api.nvim_create_autocmd("BufWritePre", {
 	group = lsp_fmt_group,
 	callback = function(args)
+		-- notebooks : prettier and the trim would rewrite the cells of the .ipynb
+		if vim.api.nvim_buf_get_name(args.buf):find("%.ipynb$") then
+			return
+		end
 		require("mini.trailspace").trim()
 		if no_format_on_save[vim.bo[args.buf].filetype] then
 			return

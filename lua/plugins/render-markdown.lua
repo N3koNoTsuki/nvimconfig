@@ -30,5 +30,7 @@ return {
 
 	opts = {
 		completions = { lsp = { enabled = true } },
+		-- keeps the structure of the formulas, unlike latex2text : see the script
+		latex = { converter = vim.fn.stdpath("config") .. "/bin/latex2unicode" },
 	},
 }

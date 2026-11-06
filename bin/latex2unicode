@@ -1,0 +1,158 @@
+#!/usr/bin/python3
+"""LaTeX formula (stdin) -> one line of unicode (stdout), for render-markdown.nvim.
+
+latex2text drops the braces: \\frac{1-x}{y} gives 1-x/y and x^{n+1} gives x^n+1, which are different
+formulas. Here the structure is kept: (1-x)/y and xⁿ⁺¹. Unknown commands stay visible as they are.
+"""
+import re
+import sys
+
+SYMBOLS = {
+    "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ϵ", "varepsilon": "ε", "zeta": "ζ",
+    "eta": "η", "theta": "θ", "vartheta": "ϑ", "iota": "ι", "kappa": "κ", "lambda": "λ", "mu": "μ", "nu": "ν",
+    "xi": "ξ", "pi": "π", "rho": "ρ", "sigma": "σ", "tau": "τ", "upsilon": "υ", "phi": "ϕ", "varphi": "φ",
+    "chi": "χ", "psi": "ψ", "omega": "ω", "Gamma": "Γ", "Delta": "Δ", "Theta": "Θ", "Lambda": "Λ", "Xi": "Ξ",
+    "Pi": "Π", "Sigma": "Σ", "Phi": "Φ", "Psi": "Ψ", "Omega": "Ω",
+    "to": "→", "rightarrow": "→", "leftarrow": "←", "mapsto": "↦", "Rightarrow": "⇒", "Leftrightarrow": "⇔",
+    "in": "∈", "notin": "∉", "subset": "⊂", "cup": "∪", "cap": "∩", "emptyset": "∅", "forall": "∀", "exists": "∃",
+    "leq": "≤", "le": "≤", "geq": "≥", "ge": "≥", "neq": "≠", "ne": "≠", "approx": "≈", "sim": "∼", "equiv": "≡",
+    "ll": "≪", "gg": "≫", "times": "×", "cdot": "⋅", "pm": "±", "mp": "∓", "div": "÷", "infty": "∞", "partial": "∂",
+    "nabla": "∇", "int": "∫", "iint": "∬", "oint": "∮", "sum": "∑", "prod": "∏", "dots": "…", "ldots": "…",
+    "cdots": "⋯", "ell": "ℓ", "circ": "∘", "prime": "′", "vert": "|", "lvert": "|", "rvert": "|", "Vert": "‖",
+    "lbrace": "{", "rbrace": "}", "langle": "⟨", "rangle": "⟩",
+}
+FUNCTIONS = set(
+    "sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh coth exp log ln lg lim sup inf max min det dim ker".split()
+)
+SPACES = {",": " ", ";": " ", ":": " ", " ": " ", "!": "", "quad": "  ", "qquad": "    "}
+DROPPED = {"displaystyle", "textstyle", "scriptstyle", "left", "right", "big", "Big", "bigg", "Bigg", "limits", "nolimits"}
+FONTS = {"mathrm", "text", "textrm", "mathit", "mathbf", "boldsymbol", "operatorname", "mathcal"}
+BLACKBOARD = {"N": "ℕ", "Z": "ℤ", "Q": "ℚ", "R": "ℝ", "C": "ℂ"}
+SUPER = dict(zip("0123456789+-=()nia", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱᵃ")) | dict(
+    zip("bcdefghjklmoprstuvwxyzABDEGHIJKLMNOPRTUVW", "ᵇᶜᵈᵉᶠᵍʰʲᵏˡᵐᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁⱽᵂ")
+)
+SUB = dict(zip("0123456789+-=()aehijklmnoprstuvx", "₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ"))
+ATOM = re.compile(r"^(\w|[.′'*])+$")
+SINGLE = re.compile(r"^(\d+(\.\d+)?|\w)$")
+
+
+class Parser:
+    def __init__(self, text):
+        self.s = text
+        self.i = 0
+
+    def skip_spaces(self):
+        while self.i < len(self.s) and self.s[self.i].isspace():
+            self.i += 1
+
+    def word(self):
+        match = re.compile(r"[a-zA-Z]+").match(self.s, self.i)
+        if match:
+            self.i = match.end()
+            return match.group()
+        self.i += 1
+        return self.s[self.i - 1] if self.i <= len(self.s) else ""
+
+    def group(self):
+        """one argument : {...}, a command, or a single character"""
+        self.skip_spaces()
+        if self.i >= len(self.s):
+            return ""
+        char = self.s[self.i]
+        if char == "{":
+            self.i += 1
+            return self.until_close()
+        if char == "\\":
+            return self.command()
+        self.i += 1
+        return char
+
+    def until_close(self):
+        out = []
+        while self.i < len(self.s):
+            char = self.s[self.i]
+            if char == "}":
+                self.i += 1
+                break
+            out.append(self.item())
+        return "".join(out)
+
+    def command(self):
+        self.i += 1
+        name = self.word()
+        if name in SPACES:
+            return SPACES[name]
+        if name in DROPPED:
+            self.skip_spaces()
+            return ""
+        if name in ("frac", "dfrac", "tfrac"):
+            top, bottom = self.group(), self.group()
+            # a/2h would read as (a/2)h, and h/2sup(...) as a single word
+            bottom = bottom if SINGLE.match(bottom) else f"({bottom})"
+            self.skip_spaces()
+            next_char = self.s[self.i:self.i + 1]
+            gap = " " if next_char.isalnum() or (next_char == "\\" and self.s[self.i + 1:self.i + 2].isalpha()) else ""
+            return f"{wrap(top)}/{bottom}{gap}"
+        if name == "sqrt":
+            return "√" + wrap(self.group())
+        if name == "mathbb":
+            arg = self.group()
+            return BLACKBOARD.get(arg, arg)
+        if name in FONTS:
+            return self.group()
+        if name in FUNCTIONS:
+            return name
+        if name in SYMBOLS:
+            self.skip_spaces()
+            return SYMBOLS[name]
+        if len(name) == 1 and not name.isalpha():
+            return name  # \{ \} \% \$ ...
+        return "\\" + name
+
+    def item(self):
+        char = self.s[self.i]
+        if char == "\\":
+            return self.command()
+        if char == "{":
+            self.i += 1
+            return self.until_close()
+        if char in "^_":
+            self.i += 1
+            return script(self.group(), SUPER if char == "^" else SUB, char)
+        self.i += 1
+        return " " if char.isspace() else char
+
+    def parse(self):
+        out = []
+        while self.i < len(self.s):
+            if self.s[self.i] == "}":
+                self.i += 1
+                continue
+            out.append(self.item())
+        return "".join(out)
+
+
+def wrap(text):
+    return text if ATOM.match(text) else f"({text})"
+
+
+def script(text, table, mark):
+    if text == "*":
+        return "*" if mark == "^" else "_*"
+    if text in ("′", "'"):
+        return text
+    if text and all(char in table for char in text):
+        return "".join(table[char] for char in text)
+    return f"{mark}{wrap(text)}"
+
+
+def convert(text):
+    return Parser(text.strip().strip("$").strip()).parse().strip()
+
+
+if __name__ == "__main__":
+    source = sys.stdin.read()
+    try:
+        print(convert(source))
+    except Exception:  # a formula shown raw is better than no formula
+        print(source.strip())

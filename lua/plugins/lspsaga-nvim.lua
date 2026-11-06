@@ -5,6 +5,8 @@ return {
 		require("lspsaga").setup({
 			-- keybinds for navigation in lspsaga window
 			move_in_saga = { prev = "<C-k>", next = "<C-j>" },
+			-- otter's hidden buffers (notebooks) would take over the winbar of the real one
+			symbol_in_winbar = { ignore_patterns = { "%.otter%." } },
 			-- use enter to open file with finder
 			finder_action_keys = {
 				open = "<CR>",
