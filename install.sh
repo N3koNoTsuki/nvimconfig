@@ -12,10 +12,30 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 MOLTEN_VENV="$DATA_HOME/nvim/molten-venv"
 
-CORE_PACKAGES=(neovim git base-devel ripgrep fd unzip curl nodejs npm python uv wl-clipboard tree-sitter-cli rust)
-NOTEBOOK_PACKAGES=(imagemagick octave)
-CORE_COMMANDS=(nvim git make gcc rg fd unzip curl node npm python3 uv wl-copy tree-sitter cargo)
-NOTEBOOK_COMMANDS=(magick octave)
+# command|Arch package|what breaks without it
+# a dependency is looked up by command : it can come from anywhere (~/.local/bin, cargo, another package)
+CORE_DEPS=(
+	"nvim|neovim|required"
+	"git|git|required"
+	"make|base-devel|telescope-fzf-native and LuaSnip's jsregexp don't build"
+	"gcc|base-devel|treesitter parsers don't build"
+	"tree-sitter|tree-sitter-cli|treesitter parsers don't build"
+	"rg|ripgrep|telescope live grep doesn't work"
+	"fd|fd|optional, file search tools fall back on something else"
+	"unzip|unzip|mason can't unpack its tools"
+	"curl|curl|mason can't download its tools"
+	"node|nodejs|mason's npm tools don't work (pyright, bash, json and yaml servers, prettierd)"
+	"npm|npm|mason can't install its npm tools"
+	"python3|python|mason can't install its python tools (black, flake8)"
+	"wl-copy|wl-clipboard|no system clipboard on Wayland"
+	"cargo|rust|Rust projects don't build from nvim"
+)
+NOTEBOOK_DEPS=(
+	"uv|uv|notebooks skipped"
+	"magick|imagemagick|notebook plots aren't displayed"
+	"octave|octave|no Octave kernel"
+)
+ABSENT_DEPS=()
 
 system=1
 notebook=1
@@ -43,29 +63,42 @@ die() {
 
 export PATH="$HOME/.local/bin:$PATH"
 
+missing_deps() {
+	local dep
+	for dep in "$@"; do
+		command -v "${dep%%|*}" >/dev/null || printf '%s\n' "$dep"
+	done
+}
+
+report_absent_deps() {
+	local dep cmd package impact
+	for dep in "${ABSENT_DEPS[@]}"; do
+		IFS='|' read -r cmd package impact <<<"$dep"
+		warn "$cmd not found (Arch package: $package) : $impact"
+	done
+}
+
 install_system() {
 	step "System packages"
-	local packages=("${CORE_PACKAGES[@]}") commands=("${CORE_COMMANDS[@]}")
+	local deps=("${CORE_DEPS[@]}")
 	if ((notebook)); then
-		packages+=("${NOTEBOOK_PACKAGES[@]}")
-		commands+=("${NOTEBOOK_COMMANDS[@]}")
+		deps+=("${NOTEBOOK_DEPS[@]}")
 	fi
+	mapfile -t ABSENT_DEPS < <(missing_deps "${deps[@]}")
 
-	if ((system)) && command -v pacman >/dev/null; then
-		local missing
-		missing="$(pacman -T "${packages[@]}" || true)"
-		if [[ -n "$missing" ]]; then
-			# shellcheck disable=SC2086 # one package per word
-			sudo pacman -S --needed --noconfirm $missing
+	if ((system && ${#ABSENT_DEPS[@]})) && command -v pacman >/dev/null; then
+		local packages
+		mapfile -t packages < <(printf '%s\n' "${ABSENT_DEPS[@]}" | cut -d'|' -f2 | sort -u)
+		echo "to install: ${packages[*]}"
+		# not fatal : what is missing gets reported below, and most of the config works without it
+		if ! sudo pacman -S --needed --noconfirm "${packages[@]}"; then
+			warn "pacman failed. A 404 means the package database is outdated : run 'sudo pacman -Syu', then this script again"
 		fi
+		mapfile -t ABSENT_DEPS < <(missing_deps "${deps[@]}")
 	fi
 
-	local absent=()
-	for cmd in "${commands[@]}"; do
-		command -v "$cmd" >/dev/null || absent+=("$cmd")
-	done
-	if ((${#absent[@]})); then
-		warn "missing commands: ${absent[*]}"
+	if ((${#ABSENT_DEPS[@]})); then
+		report_absent_deps
 	else
 		echo "all commands found"
 	fi
@@ -123,7 +156,12 @@ install_plugins() {
 	nvim --headless "+Lazy! restore" +qa
 
 	step "Treesitter parsers"
-	nvim --headless "+lua vim.wait(300000, function() local installed = require('nvim-treesitter.config').get_installed() return vim.iter(vim.g.treesitter_parsers):all(function(p) return vim.list_contains(installed, p) end) end, 500)" +qa
+	if command -v tree-sitter >/dev/null && command -v gcc >/dev/null; then
+		nvim --headless "+lua vim.wait(300000, function() local installed = require('nvim-treesitter.config').get_installed() return vim.iter(vim.g.treesitter_parsers):all(function(p) return vim.list_contains(installed, p) end) end, 500)" +qa
+	else
+		# they can't build : don't wait for them until the timeout
+		warn "tree-sitter or gcc not found, parsers skipped"
+	fi
 
 	step "LSP servers, formatters and debuggers (mason)"
 	nvim --headless "+MasonToolsInstallSync" +qa
@@ -144,10 +182,11 @@ verify() {
 	step "Check"
 	local report failed=0
 	report="$(mktemp)"
-	nvim --headless "+lua vim.fn.writefile({'theme: ' .. tostring(vim.g.colors_name), 'plugins: ' .. require('lazy').stats().count, 'parsers: ' .. #require('nvim-treesitter.config').get_installed(), 'mason tools: ' .. #vim.fn.readdir(vim.fn.stdpath('data') .. '/mason/packages'), 'cord: ' .. tostring(vim.fn.executable(vim.fn.stdpath('data') .. '/cord/bin/cord') == 1)}, '$report')" +qa 2>&1 | tail -5
+	nvim --headless "+lua require('utils.install_check').write_report('$report')" +qa 2>&1 | tail -5
 	cat "$report"
 	grep -qx 'theme: dms' "$report" || failed=1
 	grep -qx 'cord: true' "$report" || failed=1
+	grep -q '^missing ' "$report" && failed=1
 	rm -f "$report"
 	if ((notebook)); then
 		if grep -qi molten "$DATA_HOME/nvim/rplugin.vim" 2>/dev/null; then
@@ -156,7 +195,22 @@ verify() {
 			echo "molten: false"
 			failed=1
 		fi
+		# importing them also catches a missing system library (cairo for cairosvg)
+		if "$MOLTEN_VENV/bin/python" -c 'import pynvim, jupyter_client, nbformat, ipykernel, cairosvg, pyperclip, octave_kernel' 2>/dev/null; then
+			echo "molten python packages: true"
+		else
+			echo "molten python packages: false"
+			failed=1
+		fi
+		if command -v jupytext >/dev/null; then
+			echo "jupytext: true"
+		else
+			echo "jupytext: false"
+			failed=1
+		fi
 	fi
+	# the plugin logs have scrolled them away since the first step
+	report_absent_deps
 	case ":$ORIGINAL_PATH:" in
 	*":$HOME/.local/bin:"*) ;;
 	*) warn "$HOME/.local/bin is not in your PATH : nvim won't find jupytext" ;;

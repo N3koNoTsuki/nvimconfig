@@ -21,6 +21,13 @@ parsers treesitter, les outils Mason, le serveur Discord et la partie notebooks.
 
 Sur une autre distribution, installe d'abord les commandes signalées par le script, puis relance-le.
 
+Une dépendance est cherchée par sa commande, d'où qu'elle vienne : seules les commandes absentes du `PATH` donnent
+lieu à une installation de paquet. Si `pacman` échoue, le script continue et signale ce qui manque avec la conséquence.
+Une erreur 404 veut dire que la base de paquets est périmée : lance `sudo pacman -Syu`, puis relance le script.
+
+À la fin, le script compare les plugins, les parsers et les outils Mason à ce que la config attend, et échoue s'il
+en manque.
+
 ## Mettre à jour une machine
 
 ```bash
