@@ -1,0 +1,60 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Paquets -------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{images/}}
+
+% --- Informations --------------------------------------------------------
+\newcommand{\titre}{{{TITLE}}}
+\newcommand{\auteur}{{{AUTHOR}}}
+
+\hypersetup{pdftitle={\titre}, pdfauthor={\auteur}}
+
+\begin{document}
+
+% --- Page de garde -------------------------------------------------------
+\begin{titlepage}
+	\centering
+	\vspace*{5cm}
+	{\Huge\bfseries \titre\par}
+	\vspace{1.5cm}
+	{\Large \auteur\par}
+	\vfill
+	{\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% --- Contenu -------------------------------------------------------------
+\section{Introduction}
+{{CURSOR}}
+
+\section{Développement}
+
+\subsection{Une équation}
+\begin{equation}
+	E = mc^2
+	\label{eq:energie}
+\end{equation}
+L'équation~\eqref{eq:energie} \dots
+
+\subsection{Une figure}
+% \begin{figure}[htbp]
+% 	\centering
+% 	\includegraphics[width=0.6\textwidth]{figure.png}
+% 	\caption{Légende}
+% 	\label{fig:figure}
+% \end{figure}
+
+\section{Conclusion}
+
+\end{document}

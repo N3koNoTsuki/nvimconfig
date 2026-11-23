@@ -1,0 +1,7 @@
+# compilation
+build/
+*.o
+*.d
+
+# clangd
+.cache/

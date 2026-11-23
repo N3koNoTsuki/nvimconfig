@@ -1,0 +1,33 @@
+{
+ "frames": 82,
+ "unique": 79,
+ "duration_s": 2.7333333333333334,
+ "kitty_png_bytes": 2405726,
+ "kitty_w": 720,
+ "kitty_h": 288,
+ "blocks_bytes": 469783,
+ "blocks_cells": [
+  [
+   75,
+   15
+  ],
+  [
+   60,
+   12
+  ],
+  [
+   50,
+   10
+  ],
+  [
+   40,
+   8
+  ],
+  [
+   35,
+   7
+  ]
+ ],
+ "palette": 79,
+ "prep_s": 17.63
+}

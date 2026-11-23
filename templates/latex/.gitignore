@@ -1,0 +1,21 @@
+# fichiers auxiliaires LaTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.xdv
+build/
+# PDF généré (retirer cette ligne pour le versionner)
+main.pdf
